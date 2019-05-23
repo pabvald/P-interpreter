@@ -363,13 +363,13 @@ struct yy_trans_info
 	};
 static const flex_int16_t yy_accept[74] =
     {   0,
-        0,    0,    4,    4,   20,   18,    1,   10,   16,   13,
-       16,   18,   14,   15,   16,   11,    9,   16,   16,   16,
+        0,    0,    4,    4,   20,   18,    1,   17,   14,   11,
+       14,   18,   12,   13,   14,    9,   16,   14,   14,   14,
         8,   18,    4,    1,    6,    4,    4,    4,    4,    4,
         4,    5,    4,    4,    4,    4,    4,    4,    4,    4,
-       17,    3,    0,    0,   11,    0,    8,    4,    4,    5,
-        5,    7,    4,    4,    4,    4,    4,    0,    2,   12,
-        0,   12,    4,    4,    4,    4,    0,    4,    0,   12,
+       15,    3,    0,    0,    9,    0,    8,    4,    4,    5,
+        5,    7,    4,    4,    4,    4,    4,    0,    2,   10,
+        0,   10,    4,    4,    4,    4,    0,    4,    0,   10,
         4,    4,    0
     } ;
 
@@ -897,28 +897,10 @@ YY_RULE_SETUP
                         return IDENT;
                     }
 	YY_BREAK
-/* Semicolon - increase the line counter */
+/* Numerical contants - Convert it into float and return it */
 case 9:
 YY_RULE_SETUP
 #line 139 "pcc.l"
-{
-                        return yytext[0];
-                    }
-	YY_BREAK
-/* New line - increase the line cunter */
-case 10:
-/* rule 10 can match eol */
-YY_RULE_SETUP
-#line 144 "pcc.l"
-{
-                        ++yylineno;
-                        return yytext[0];
-                    }
-	YY_BREAK
-/* Numerical contants - Convert it into float and return it */
-case 11:
-YY_RULE_SETUP
-#line 150 "pcc.l"
 {
                         long int li;
                         sscanf(yytext,"%ld",&li);
@@ -928,9 +910,9 @@ YY_RULE_SETUP
                         return FLOAT;
                     }
 	YY_BREAK
-case 12:
+case 10:
 YY_RULE_SETUP
-#line 159 "pcc.l"
+#line 148 "pcc.l"
 {
                         sscanf(yytext,"%lf",&( yyFloat(yylval) ));
                         yyFlag(yylval) = fFLOAT;
@@ -939,9 +921,9 @@ YY_RULE_SETUP
                     }
 	YY_BREAK
 /* String - Read string and return it */                  
-case 13:
+case 11:
 YY_RULE_SETUP
-#line 167 "pcc.l"
+#line 156 "pcc.l"
 {
                       yyStr(yylval) = readStr();
                       yyFlag(yylval) = fSTR;
@@ -950,30 +932,30 @@ YY_RULE_SETUP
                     }
 	YY_BREAK
 /* Char - Read char and return it. Chars are saved as strings */
-case 14:
+case 12:
 YY_RULE_SETUP
-#line 174 "pcc.l"
+#line 163 "pcc.l"
 {
                       yyStr(yylval) = readChar();
                       yyFlag(yylval) = fSTR;
                     }
 	YY_BREAK
 /* Structure symbols - Return the symbol */ 
-case 15:
+case 13:
 YY_RULE_SETUP
-#line 180 "pcc.l"
+#line 169 "pcc.l"
 return yytext[0];
 	YY_BREAK
 /* One-symbol operators - Return the symbol */              
-case 16:
+case 14:
 YY_RULE_SETUP
-#line 184 "pcc.l"
+#line 173 "pcc.l"
 return yytext[0];
 	YY_BREAK
 /* Two-symbol operators - Check which one of them is and return it */
-case 17:
+case 15:
 YY_RULE_SETUP
-#line 187 "pcc.l"
+#line 176 "pcc.l"
 {
                         switch (yytext[0]) {
                             case '=':
@@ -991,17 +973,35 @@ YY_RULE_SETUP
                         }
                     }      
 	YY_BREAK
+/* Semicolon - return it */
+case 16:
+YY_RULE_SETUP
+#line 194 "pcc.l"
+{
+                        return yytext[0];
+                    }
+	YY_BREAK
+/* New line - increase the line counter and return it */
+case 17:
+/* rule 17 can match eol */
+YY_RULE_SETUP
+#line 198 "pcc.l"
+{
+                        ++yylineno;
+                        return yytext[0];
+                    }
+	YY_BREAK
 /* Other - Lexical error */                 
 case 18:
 YY_RULE_SETUP
-#line 205 "pcc.l"
+#line 204 "pcc.l"
 {
                         prError(yylineno,"Unexpected character in input: %c [%d]\n",yytext[0],yytext[0],NULL);
                     }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 209 "pcc.l"
+#line 208 "pcc.l"
 ECHO;
 	YY_BREAK
 #line 1008 "pcc.lex.c"
@@ -2010,7 +2010,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 209 "pcc.l"
+#line 208 "pcc.l"
 
 
 /**
@@ -2075,10 +2075,34 @@ static char *readStr(void) {
 
     if (c=='\\') { // Possible escaped character
       c = input();
-      if (c!='\\' && c !='"') {
-        unput(c);
-        c = '\\';
-      }
+      switch(c) { 
+        case 'a': 
+          c = '\a'; 
+          break; 
+        case 'b': 
+          c = '\b'; 
+          break; 
+        case 'e': 
+          c = '\e'; 
+          break; 
+        case 'f': 
+          c = '\f'; 
+          break; 
+        case 'n': 
+          c = '\n'; 
+          break; 
+        case 'r': 
+          c = '\r'; 
+          break; 
+        case 't': 
+          c = '\t'; 
+          break; 
+        case 'v': 
+          c = '\v'; 
+          break;        
+        default: 
+          break; 
+      } 
     }
 
     addStr(&str,&len,c);

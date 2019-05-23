@@ -207,13 +207,13 @@ static void proc(ast_t *root) {
             break;
         case WRITE:
             if (left(root) == NULL) { // write(IDENT)
-                printf("%g\n", expr(right(root)) );
+                printf("%g", expr(right(root)) );
 
             } else if (right(root) == NULL) { //write(STR) 
-                puts( sv(left(root)) );
+                printf("%s", sv(left(root)) );
 
             } else { // write(STR, IDENT )
-                printf("%s%g\n", sv(left(root)), expr(right(root)) );
+                printf("%s%g", sv(left(root)), expr(right(root)) );
             }
             break;
         case READ:

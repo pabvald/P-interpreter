@@ -134,17 +134,6 @@ MLCOMMENTSTART  ("/*")
                         return IDENT;
                     }
 
- /* Semicolon - increase the line counter */
-{COMSEP}            {
-                        return yytext[0];
-                    }
-
- /* New line - increase the line cunter */
-{NL}                {
-                        ++yylineno;
-                        return yytext[0];
-                    }
-
  /* Numerical contants - Convert it into float and return it */
 {DIGITS}            {
                         long int li;
@@ -199,6 +188,16 @@ MLCOMMENTSTART  ("/*")
                                 return OR;
                         }
                     }      
+
+ /* Semicolon - return it */
+{COMSEP}            {
+                        return yytext[0];
+                    }
+ /* New line - increase the line counter and return it */
+{NL}                {
+                        ++yylineno;
+                        return yytext[0];
+                    }
 
  /* Other - Lexical error */                 
 .                   {
@@ -269,10 +268,34 @@ static char *readStr(void) {
 
     if (c=='\\') { // Possible escaped character
       c = input();
-      if (c!='\\' && c !='"') {
-        unput(c);
-        c = '\\';
-      }
+      switch(c) { 
+        case 'a': 
+          c = '\a'; 
+          break; 
+        case 'b': 
+          c = '\b'; 
+          break; 
+        case 'e': 
+          c = '\e'; 
+          break; 
+        case 'f': 
+          c = '\f'; 
+          break; 
+        case 'n': 
+          c = '\n'; 
+          break; 
+        case 'r': 
+          c = '\r'; 
+          break; 
+        case 't': 
+          c = '\t'; 
+          break; 
+        case 'v': 
+          c = '\v'; 
+          break;        
+        default: 
+          break; 
+      } 
     }
 
     addStr(&str,&len,c);

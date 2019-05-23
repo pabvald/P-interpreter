@@ -4,16 +4,28 @@
  */
 
  // Read something
- read("Type some number >", a);
+
+ read("Type some number > ", a);
+ 
+ write("Type some other number > "); 
+ read(b);
 
  // Multiply the input
- b = a*2 - (7%3) + 4.5;
+ c = b - (a%5);
 
  // Print 
- write("Hola ",b); 
+ write("a =  ",a);
+ write("\n");
+ write("b = ", b);   
+ write("\n");
+ write("c = ", c); 
  write("\n");
 
- if (fin) { 
-    write("fin\n") 
-} else 
+
+ end = b < a;
+ if (end) { 
+    write("THE END\n");
+} else {
+    write("TO BE CONTINUED\n");
+}
 

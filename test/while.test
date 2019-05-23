@@ -1,0 +1,33 @@
+/*
+ *   WHILE 
+ */
+
+write("WHILE TEST");
+write("\n");
+read("Type some positive number >", a);
+
+
+if (a > 0) {
+
+  while (a > 0 ) {
+    // Print the value of a
+    write("a = ", a);
+    write("\n");
+
+    // Decrease a 
+    a = a-1;
+  } 
+
+} else {
+  write("It was supposed to be positive\n");
+  
+  while (a < 0) {
+    write("a = ", a);
+    write("\n");
+    a = a +1;
+  }
+  
+}
+
+  
+
