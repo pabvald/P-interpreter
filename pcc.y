@@ -31,6 +31,7 @@ static ast_t *astRoot = NULL;
 
 %}
 
+ /* Stack struct */
 %union {
     struct sStackType {
     unsigned char   flag;
@@ -47,8 +48,7 @@ static ast_t *astRoot = NULL;
 %nonassoc EQ NE
 %nonassoc LE GE '<' '>'
 
- /* Left associative operators: logic OR, logic AND, sum, difference, product 
-  * division */
+ /* Left associative operators: logic OR, logic AND, sum, difference, product, division and module */
 %left OR
 %left AND
 
@@ -64,14 +64,17 @@ static ast_t *astRoot = NULL;
 
 
 %token <s> IDENT
-%term LET PRINT SIN COS TAN ASIN ACOS ATAN LOG LOG10 EXPOP CEIL FLOOR READ WRITE VAR 
+%term SIN ASIN COS ACOS TAN ATAN EXP LOG LOG10 CEIL FLOOR 
+%term WRITE READ 
+%term WHILE IF ELSE 
 %token <s> FLOAT
 %token <s> STR
 
-%type <s> expr ternary statement  progelem prog
+%type <s> expr statement progelem prog block
 
 %%
 
+  /* program -> program_element | program program_element */
 prog
   : progelem
     {
@@ -83,6 +86,7 @@ prog
     }
   ;
 
+  /* program_element -> statement | new_line */
 progelem
   : statement '\n'
     {
@@ -95,49 +99,83 @@ progelem
     }
   ;
 
-
+  
 statement
-  : LET IDENT '=' ternary
+  : IDENT '=' expr ';'
     {
       $$.flag = fAST;
-      $$.u.ast = mkNd('=', mkSlf(IDENT,$2.u.vStr), $4.u.ast);
+      $$.u.ast = mkNd('=', mkSlf(IDENT, $1.u.vStr), $3.u.ast);
     }
-  | PRINT ternary
+  | WRITE '(' IDENT ')' ';'
     {
       $$.flag = fAST;
-      $$.u.ast = mkNd(PRINT, NULL, $2.u.ast);
+      $$.u.ast = mkNd(WRITE, NULL, mkSlf(IDENT, $3.u.vStr));
     }
-  | PRINT STR
+  | WRITE '(' STR ')' ';'
     {
       $$.flag = fAST;
-      $$.u.ast = mkNd(PRINT, mkSlf(STR,$2.u.vStr), NULL);
+      $$.u.ast = mkNd(WRITE, mkSlf(STR, $3.u.vStr), NULL);
     }
-  | PRINT STR ternary
+  | WRITE '(' STR ',' expr ')' ';'
     {
       $$.flag = fAST;
-      $$.u.ast = mkNd(PRINT, mkSlf(STR,$2.u.vStr), $3.u.ast);
+      $$.u.ast = mkNd(WRITE, mkSlf(STR, $3.u.vStr), $5.u.ast);
     }
-  | READ IDENT
+  | READ '(' IDENT ')' ';'
     {
       $$.flag = fAST;
-      $$.u.ast = mkNd(READ, NULL, mkSlf(IDENT,$2.u.vStr));
+      $$.u.ast = mkNd(READ, NULL, mkSlf(IDENT, $3.u.vStr));
     }
-  | READ STR IDENT
+  | READ '(' STR ',' IDENT ')' ';'
     {
       $$.flag = fAST;
-      $$.u.ast = mkNd(READ, mkSlf(STR,$2.u.vStr), mkSlf(IDENT,$3.u.vStr));
+      $$.u.ast = mkNd(READ, mkSlf(STR, $3.u.vStr), mkSlf(IDENT, $5.u.vStr));
+    }
+  | WHILE '(' expr ')' '{' block '}' 
+    {
+      $$.flag = fAST;
+      $$.u.ast = mkNd(WHILE, $3.u.ast, $6.u.ast);
+    }
+  | IF '(' expr ')' '{' block '}'
+    {
+      $$.flag = fAST;
+      $$.u.ast = mkNd(IF, $3.u.ast, $6.u.ast);
+    }
+  | IF '(' expr ')' '{' block '}' ELSE '{' block '}'
+    {
+      $$.flag = fAST;
+      $$.u.ast = mkNd(ELSE, $3.u.ast, mkNd(':', $6.u.ast, $10.u.ast) );
+    }  
+  | ';'
+    {
+      /* Empty statement - Do nothing */
+      $$.flag = fAST;
+      $$.u.ast = NULL;
     }
   ;
 
-ternary
-  : ternary '?' ternary ':' ternary
+block
+  : statement 
     {
       $$.flag = fAST;
-      $$.u.ast = mkNd('?', $1.u.ast, mkNd(':', $3.u.ast, $5.u.ast) );
+      $$.u.ast = appR(';', NULL, $1.u.ast);
     }
-  | expr
-    /* $$ = $1 */
+  | '\n'
+    {
+      $$.flag = fAST;
+      $$.u.ast = NULL;
+    }
+  |  block statement 
+    {
+      $$.flag = fAST;
+      $$.u.ast = appR(';', $1.u.ast, $2.u.ast);
+    }
+  | block '\n'
+    {
+      $$ = $1;
+    }
   ;
+
 
 expr
   : expr OR expr
@@ -205,10 +243,15 @@ expr
       $$.flag = fAST;
       $$.u.ast = mkNd('^', $1.u.ast, $3.u.ast);
     }
+  | expr '%' expr 
+    {
+      $$.flag = fAST;
+      $$.u.ast = mkNd('%', $1.u.ast, $3.u.ast);
+    }
   | '!' expr
     {
       $$.flag = fAST;
-      $$.u.ast = mkNd('!',NULL,$2.u.ast);
+      $$.u.ast = mkNd('!', NULL, $2.u.ast);
     }
   | '+' expr %prec UNOP
     {
@@ -217,37 +260,77 @@ expr
   | '-' expr %prec UNOP
     {
       $$.flag = fAST;
-      $$.u.ast = mkNd('-',NULL,$2.u.ast);
+      $$.u.ast = mkNd('-', NULL, $2.u.ast);
     }
-  | '(' ternary ')'
+  | '(' expr ')'
     {
       $$ = $2;
     }
   | FLOAT
     {
       $$.flag = fAST;
-      $$.u.ast = mkDlf(FLOAT,$1.u.vFloat);
+      $$.u.ast = mkDlf(FLOAT, $1.u.vFloat);
     }
   | IDENT
     {
       $$.flag = fAST;
-      $$.u.ast = mkSlf(IDENT,$1.u.vStr);
+      $$.u.ast = mkSlf(IDENT, $1.u.vStr);
     }
-  | SIN '(' ternary ')'
+  | SIN '(' expr ')'
     {
       $$.flag = fAST;
-      $$.u.ast = mkNd(SIN,$3.u.ast,NULL);
+      $$.u.ast = mkNd(SIN, $3.u.ast, NULL);
     }
-  | COS '(' ternary ')'
+  | ASIN '(' expr ')'
     {
       $$.flag = fAST;
-      $$.u.ast = mkNd(COS,$3.u.ast,NULL);
+      $$.u.ast = mkNd(ASIN, $3.u.ast, NULL);
     }
-  | TAN '(' ternary ')'
+  | COS '(' expr ')'
     {
       $$.flag = fAST;
-      $$.u.ast = mkNd(TAN,$3.u.ast,NULL);
+      $$.u.ast = mkNd(COS, $3.u.ast, NULL);
     }
+  | ACOS '(' expr ')'
+    {
+      $$.flag = fAST;
+      $$.u.ast = mkNd(ACOS, $3.u.ast, NULL);
+    }
+  | TAN '(' expr ')'
+    {
+      $$.flag = fAST;
+      $$.u.ast = mkNd(TAN, $3.u.ast, NULL);
+    }
+  | ATAN '(' expr ')'
+    {
+      $$.flag = fAST;
+      $$.u.ast = mkNd(ATAN, $3.u.ast, NULL);
+    }
+  | EXP '(' expr ')'
+    {
+      $$.flag = fAST;
+      $$.u.ast = mkNd(EXP, $3.u.ast, NULL);
+    }
+  | LOG '(' expr ')'
+    {
+      $$.flag = fAST;
+      $$.u.ast = mkNd(LOG, $3.u.ast, NULL);
+    }
+  | LOG10 '(' expr ')'
+    {
+      $$.flag = fAST;
+      $$.u.ast = mkNd(LOG10, $3.u.ast, NULL);
+    }
+  | CEIL '(' expr ')'
+    {
+      $$.flag = fAST;
+      $$.u.ast = mkNd(CEIL, $3.u.ast, NULL);
+    }
+  | FLOOR '(' expr ')'
+    {
+      $$.flag = fAST;
+      $$.u.ast = mkNd(FLOOR, $3.u.ast, NULL);
+    }  
   ;
 
 

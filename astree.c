@@ -93,12 +93,6 @@ ast_t *appR(unsigned tag, ast_t *lst, ast_t *nd) {
  */
 static double expr(ast_t *root) {
     switch (tag(root)) {
-        case '?':
-            if (expr(left(root)) != 0.0) {
-                return expr( left(right(root)) );
-            } else {
-                return expr( right(right(root)) );
-            }
         case OR:
             if (expr(left(root)) != 0.0 || expr(right(root)) != 0.0) {
                 return 1.0;
@@ -161,6 +155,8 @@ static double expr(ast_t *root) {
             return expr(left(root)) / expr(right(root));
         case '^':
             return pow( expr(left(root)), expr(right(root)) );
+        case '%':
+            return fmod( expr(left(root)), expr(right(root)) );
         case '!':
             if (expr( right(root) ) == 0.0) {
                 return 1.0;
@@ -170,13 +166,29 @@ static double expr(ast_t *root) {
         case FLOAT:
             return dv(root);
         case IDENT:
-            return read( sv(root) );
+            return readD( sv(root) );
         case SIN:
             return sin( expr(left(root)) );
+        case ASIN:
+            return asin( expr(left(root)) );
         case COS:
             return cos( expr(left(root)) );
+        case ACOS:
+            return acos( expr(left(root)) );
         case TAN:
             return tan( expr(left(root)) );
+        case ATAN:
+            return atan( expr(left(root)) );
+        case EXP:
+            return exp( expr(left(root)) );
+        case LOG:
+            return log( expr(left(root)) );
+        case LOG10:
+            return log10( expr(left(root)) );
+        case CEIL:
+            return ceil( expr(left(root)) );
+        case FLOOR:
+            return floor( expr(left(root)) );
         default:
             prError((unsigned short)lnum(root),"Unknown tag in expr AST %u\n",tag(root),NULL);
             break;
@@ -185,33 +197,70 @@ static double expr(ast_t *root) {
 
 
 /**
- * Process an AST given its roor node.
+ * Process an AST given its root node.
  * @param root - root node
  */
 static void proc(ast_t *root) {
     switch (tag(root)) {
-        case '=':
-            insertModify( sv(left(root)), expr(right(root)) );
+        case '=':            
+            insertModifyD( sv(left(root)), expr(right(root)) );     
             break;
-        case PRINT:
-            if (left(root) == NULL) {
+        case WRITE:
+            if (left(root) == NULL) { // write(IDENT)
                 printf("%g\n", expr(right(root)) );
-            } else if (right(root) == NULL) {
+
+            } else if (right(root) == NULL) { //write(STR) 
                 puts( sv(left(root)) );
-            } else {
+
+            } else { // write(STR, IDENT )
                 printf("%s%g\n", sv(left(root)), expr(right(root)) );
             }
             break;
         case READ:
-            if (left(root) == NULL) {
+            if (left(root) == NULL) { //read(IDENT)
                 double rval;
                 scanf("%lf",&rval);
-                insertModify(sv(right(root)), rval);
-            } else {
-                double rval;
+                insertModifyD(sv(right(root)), rval);
+            } else { //read(STRING, IDENT)
+                double rval; 
                 printf("%s", sv(left(root)));
                 scanf("%lf", &rval);
-                insertModify( sv(right(root)), rval);
+                insertModifyD( sv(right(root)), rval);
+            }
+            break;
+        case WHILE:
+            {
+                double control = expr(left(root));
+                while (control) {
+                    if (right(root) != NULL) {
+                        evaluate(right(root));
+                    }                    
+                    control = expr(left(root));
+                }
+            }
+            break;
+        case IF:
+            {
+                double control = expr(left(root));
+                if (control ) {
+                    if(right(root) != NULL) {
+                        evaluate(right(root));
+                    }
+                }
+            }
+            break;
+        case ELSE:
+            {
+                double control = expr(left(root));
+                if (control) {
+                    if(left(right(root)) != NULL) {
+                        evaluate( left(right(root)));
+                    }
+                } else {
+                    if(right(right(root)) != NULL) {
+                        evaluate( right( right(root)) );
+                    } 
+                }
             }
             break;
         default:

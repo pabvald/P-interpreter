@@ -8,7 +8,9 @@
 #ifndef ___SYMTAB_H___
 #define ___SYMTAB_H___
 
-void insertModify(char *s, double val);
-double read(char *s);
+void insertModifyD(char *s, double val);
+void insertModifyS(char *s, char *string);
+double readD(char *s);
+char *readS(char *s);
 
 #endif

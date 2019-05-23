@@ -5,22 +5,17 @@ all:
 	@make syntactic
 	@make lexical
 	@make executable
-	@make testing
-
 
 syntactic:
 	yacc --defines -v pcc.y -o pcc.c	
 
 
-lexical: y
+lexical: syntactic
 	flex -o pcc.lex.c pcc.l
 
 
-executable: l
+executable: lexical
 	gcc pcc.c pcc.lex.c symtab.c utils.c astree.c  -o x_pcc -lm
-
-testing:
-	echo "Testing done"
 
 
 clean:

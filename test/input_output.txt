@@ -1,0 +1,19 @@
+
+/* 
+ * INPUT - OUTPUT 
+ */
+
+ // Read something
+ read("Type some number >", a);
+
+ // Multiply the input
+ b = a*2 - (7%3) + 4.5;
+
+ // Print 
+ write("Hola ",b); 
+ write("\n");
+
+ if (fin) { 
+    write("fin\n") 
+} else 
+

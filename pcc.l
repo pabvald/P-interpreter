@@ -1,4 +1,3 @@
-
 %{
 #include <stdio.h>
 #include <string.h>
@@ -8,43 +7,46 @@
 #include "token.h"
 #include "astree.h"
 
-#define KWLEN 14
+#define KWLEN 16
 
-/* Keywords: variable declaration, input/ouput functions names and 
- * predefined functions names */
+/* Keywords: input/ouput functions names and predefined functions names */
 char *keywords[KWLEN] = {
-    "write",
-    "read",
-    "var",
-    "cos",
-    "sin",
-    "tan",
-    "asin",
     "acos",
+    "asin",
     "atan",
+    "ceil",
+    "cos",
+    "else",
+    "exp",
+    "floor",
+    "if",
     "log",
     "log10",
-    "exp",
-    "ceil",
-    "floor",
+    "read",
+    "sin",
+    "tan",
+    "while",
+    "write",
 };
 
 /* Codes used in Yacc to refer to the keywords */
 unsigned keycodes[KWLEN] = {
-    WRITE,
-    READ,
-    VAR,
-    COS,
-    SIN,
-    TAN,
-    ASIN,
     ACOS,
+    ASIN,
     ATAN,
+    CEIL,
+    COS,
+    ELSE,
+    EXP,
+    FLOOR,
+    IF,
     LOG,
     LOG10,
-    EXPOP,
-    CEIL,
-    FLOOR,
+    READ,
+    SIN,
+    TAN,
+    WHILE,
+    WRITE,
 };
 
 static void lower(char *s);
@@ -58,7 +60,7 @@ int yywrap(void) {
 
 %}
 
-LETTER    ([a-zA-Z])
+LETTER    ([_a-zA-Z])
 
 DIGIT     ([0-9])
 DIGITS    ({DIGIT}+)
@@ -71,20 +73,24 @@ FLOAT3    ({DIGITS}"."{DIGITS}{EXP})
 
 FLOAT     ({FLOAT1}|{FLOAT2}|{FLOAT3})
 
-IDENT     ((_|{LETTER})(_|{LETTER}|{DIGIT})*)
+IDENT     ({LETTER}({LETTER}|{DIGIT})*)
 
-COMSEP    ([\n])
+COMSEP    ";"
+
+NL        ([\n])
 
 WSPC      ([ \t\f\r])
 WSPCS     ({WSPC}+)
 
 
-OP1       ([-+*/=<>()%!^])
+OP1       ([-+*/%=<>!^])
 OP2       ("=="|"!="|"<="|">="|"&&"|"||")
+
+STRUCTURE    ([(),{}])
 
 CHARSTART       (['])
 STRSTART        (["])
-SLCOMMENTSTART  ("//")
+
 MLCOMMENTSTART  ("/*")
 
 %s  MLCOMMENT
@@ -95,16 +101,17 @@ MLCOMMENTSTART  ("/*")
 
 
  /* Single line comment - ignore line */
-{SLCOMMENTSTART}.*\n    { ++yylineno; } 
+"//".*\n                { ++yylineno; } 
 
 
  /* Multiline comment - ignore input until the comment is closed. Increase 
   * the line counter when a newline is found */
-{MLCOMMENTSTART}        { BEGIN MLCOMMENT; } 
-<MLCOMMENT>"*/"         { BEGIN 0;}
-<MLCOMMENT>[\n]         { ++yylineno; }
-<MLCOMMENT>.            ; 
 
+"/*"			              { BEGIN(MLCOMMENT); }
+<MLCOMMENT>[^*\n]*  	  ;
+<MLCOMMENT>"*"+[^/\n]*	;
+<MLCOMMENT>\n		        { ++yylineno; }
+<MLCOMMENT>"*"+"/"      {	BEGIN(0); }
 
  /* Identifiers and keywords - Check if it is a keyword and return it */
 {IDENT}             {
@@ -127,11 +134,17 @@ MLCOMMENTSTART  ("/*")
                         return IDENT;
                     }
 
- /* Newline - increase the line counter */
+ /* Semicolon - increase the line counter */
 {COMSEP}            {
+                        return yytext[0];
+                    }
+
+ /* New line - increase the line cunter */
+{NL}                {
                         ++yylineno;
                         return yytext[0];
                     }
+
  /* Numerical contants - Convert it into float and return it */
 {DIGITS}            {
                         long int li;
@@ -162,7 +175,11 @@ MLCOMMENTSTART  ("/*")
                       yyFlag(yylval) = fSTR;
                     }
 
-  /* One-symbol operators - Return it */              
+  /* Structure symbols - Return the symbol */ 
+{STRUCTURE}          return yytext[0];
+
+
+  /* One-symbol operators - Return the symbol */              
 {OP1}               return yytext[0];
 
   /* Two-symbol operators - Check which one of them is and return it */
@@ -251,7 +268,7 @@ static char *readStr(void) {
     if (c == '"') break; // End of string 
 
     if (c=='\\') { // Possible escaped character
-      c == input();
+      c = input();
       if (c!='\\' && c !='"') {
         unput(c);
         c = '\\';
@@ -266,7 +283,7 @@ static char *readStr(void) {
 }
 
 /*
- * Read the character constant.
+ * Read the character constant and save it as a string.
  */
 static char *readChar(void) {
   int c, d;
