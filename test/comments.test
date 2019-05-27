@@ -1,0 +1,27 @@
+
+/*
+ * MULTILINE COMMENT 
+ * 
+ * This shouldn't be processed
+ */
+
+
+// First single line comment
+
+        // Single line comment with tabs
+
+                                                                    /* Multiline comment with tabs 
+                                                                     *
+                                                                     *
+                                                                     *
+                                                                     */
+// Another single line comment 
+
+    /*
+     
+        Ugly multiline comment
+
+
+     */
+
+write("Test passed\n");

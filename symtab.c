@@ -26,8 +26,9 @@ static char *wName;
 static double wDvalue;
 
 /**
- * Insert a new variable in the syntactic table.
- * @param nd - node to be examined
+ * Inserts a new node in the syntactic table or modify the field dVal
+ * of an existing one.
+ * @param nd - node to be inserted or modified
  */
 static void inmod(symtab_t *nd) {
     int res = strcmp(wName,nd->name);
@@ -63,7 +64,7 @@ static void inmod(symtab_t *nd) {
 }
 
 /**
- * Insert a new numerical variable or modify the value of an
+ * Inserts a new numerical variable or modify the value of an
  * existing one.
  * @param s - variable's name 
  * @param val - numerical value
@@ -84,7 +85,7 @@ void insertModifyD(char *s, double val) {
 
 
 /**
- * Get the the value of a numerical variable.
+ * Gets the the value of a numerical variable.
  * @param nd - node that contains the variable.
  */
 static double getD(symtab_t *nd) {
@@ -106,7 +107,7 @@ static double getD(symtab_t *nd) {
 
 
 /**
- * Get the value of a numerical variable.
+ * Gets the value of a numerical variable.
  * @param s - variable's name. 
  */
 double readD(char *s) {

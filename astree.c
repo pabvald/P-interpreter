@@ -88,11 +88,12 @@ ast_t *appR(unsigned tag, ast_t *lst, ast_t *nd) {
 /*--------------------------------------------------------- EVALUATION ---------------------------------------------------*/
 
 /**
- * Evaluate an expression.
+ * Evaluates an expression.
  * @return value of the expression
  */
 static double expr(ast_t *root) {
     switch (tag(root)) {
+        // INNER NODES
         case OR:
             if (expr(left(root)) != 0.0 || expr(right(root)) != 0.0) {
                 return 1.0;
@@ -142,7 +143,7 @@ static double expr(ast_t *root) {
                 return 0.0;
             }
         case '+':
-            return expr(left(root)) + expr(right(root));
+            return expr(left(root)) + expr(right(root)); 
         case '-':
             if (left(root) == NULL) {
                 return - expr(right(root));
@@ -162,11 +163,7 @@ static double expr(ast_t *root) {
                 return 1.0;
             } else {
                 return 0.0;
-            }
-        case FLOAT:
-            return dv(root);
-        case IDENT:
-            return readD( sv(root) );
+            } 
         case SIN:
             return sin( expr(left(root)) );
         case ASIN:
@@ -189,6 +186,11 @@ static double expr(ast_t *root) {
             return ceil( expr(left(root)) );
         case FLOOR:
             return floor( expr(left(root)) );
+        // LEAFS 
+        case FLOAT:
+            return dv(root);
+        case IDENT:
+            return readD( sv(root) );
         default:
             prError((unsigned short)lnum(root),"Unknown tag in expr AST %u\n",tag(root),NULL);
             break;
@@ -197,7 +199,7 @@ static double expr(ast_t *root) {
 
 
 /**
- * Process an AST given its root node.
+ * Processes an AST given its root node.
  * @param root - root node
  */
 static void proc(ast_t *root) {
@@ -205,6 +207,7 @@ static void proc(ast_t *root) {
         case '=':            
             insertModifyD( sv(left(root)), expr(right(root)) );     
             break;
+
         case WRITE:
             if (left(root) == NULL) { // write(IDENT)
                 printf("%g", expr(right(root)) );
@@ -213,21 +216,24 @@ static void proc(ast_t *root) {
                 printf("%s", sv(left(root)) );
 
             } else { // write(STR, IDENT )
-                printf("%s%g", sv(left(root)), expr(right(root)) );
+                printf("%s%g", sv( left(root)), expr(right(root)) );
             }
             break;
+
         case READ:
             if (left(root) == NULL) { //read(IDENT)
                 double rval;
                 scanf("%lf",&rval);
-                insertModifyD(sv(right(root)), rval);
-            } else { //read(STRING, IDENT)
+                insertModifyD( sv(right(root)), rval);
+
+            } else { //read(STR, IDENT)
                 double rval; 
                 printf("%s", sv(left(root)));
                 scanf("%lf", &rval);
                 insertModifyD( sv(right(root)), rval);
             }
             break;
+
         case WHILE:
             {
                 double control = expr(left(root));
@@ -239,16 +245,18 @@ static void proc(ast_t *root) {
                 }
             }
             break;
+
         case IF:
             {
                 double control = expr(left(root));
-                if (control ) {
+                if (control) {
                     if(right(root) != NULL) {
                         evaluate(right(root));
                     }
                 }
             }
             break;
+
         case ELSE:
             {
                 double control = expr(left(root));
@@ -257,12 +265,13 @@ static void proc(ast_t *root) {
                         evaluate( left(right(root)));
                     }
                 } else {
-                    if(right(right(root)) != NULL) {
-                        evaluate( right( right(root)) );
+                    if (right(right(root)) != NULL) {
+                        evaluate( right(right(root)) );
                     } 
                 }
             }
             break;
+
         default:
             prError((unsigned short)lnum(root),"Unknown tag in statement AST %u\n",tag(root),NULL);
             break;
@@ -270,7 +279,7 @@ static void proc(ast_t *root) {
 }
 
 /**
- * Evaluate the program.
+ * Processes a tree recursively
  * @param root - root of the Abstract Syntax Tree.
  */
 void evaluate(ast_t *root) {

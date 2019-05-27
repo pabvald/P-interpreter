@@ -1,0 +1,35 @@
+
+/** 
+ * CHAR CONSTANT TEST
+ */
+
+
+/* Empty char */
+write("Empty char");
+write('');
+write("\n");
+
+
+/* Some escaped chars */
+write('\t');
+write("One tab");
+write('\n');
+write('\t');
+write('\t');
+write("New line and 2 tabs");
+write("\n");
+write("Single quote: ");
+write('\'');
+write("\nDouble quote: ");
+write('\"');
+write("\n");
+
+/* Try read() too */
+
+write("Type the value for variable 'a'");
+read('\n',a);
+write("\nThe value of 'a' is ", a);
+write('\n');
+
+
+

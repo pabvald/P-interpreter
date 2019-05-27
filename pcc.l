@@ -75,8 +75,6 @@ FLOAT     ({FLOAT1}|{FLOAT2}|{FLOAT3})
 
 IDENT     ({LETTER}({LETTER}|{DIGIT})*)
 
-COMSEP    ";"
-
 NL        ([\n])
 
 WSPC      ([ \t\f\r])
@@ -86,22 +84,25 @@ WSPCS     ({WSPC}+)
 OP1       ([-+*/%=<>!^])
 OP2       ("=="|"!="|"<="|">="|"&&"|"||")
 
-STRUCTURE    ([(),{}])
+STRUCTURE    ([(),;{}])
 
-CHARSTART       (['])
+CHARSTART       ([\'])
 STRSTART        (["])
 
 MLCOMMENTSTART  ("/*")
 
 %s  MLCOMMENT
+%s  SLCOMMENT 
 %%
 
- /* White space, nothing to do */
-{WSPC}              ; 
 
-
- /* Single line comment - ignore line */
-"//".*\n                { ++yylineno; } 
+ /* Single line comment - ignore every character until \n */
+"//"                { BEGIN(SLCOMMENT); } 
+<SLCOMMENT>[^\n]*	;
+			
+<SLCOMMENT>\n	      { ++yylineno; 
+                      BEGIN(0);
+                    }
 
 
  /* Multiline comment - ignore input until the comment is closed. Increase 
@@ -112,6 +113,9 @@ MLCOMMENTSTART  ("/*")
 <MLCOMMENT>"*"+[^/\n]*	;
 <MLCOMMENT>\n		        { ++yylineno; }
 <MLCOMMENT>"*"+"/"      {	BEGIN(0); }
+
+ /* White space, nothing to do */
+{WSPC}              ; 
 
  /* Identifiers and keywords - Check if it is a keyword and return it */
 {IDENT}             {
@@ -158,10 +162,13 @@ MLCOMMENTSTART  ("/*")
                       
                       return STR;
                     }
+
   /* Char - Read char and return it. Chars are saved as strings */
 {CHARSTART}         {
                       yyStr(yylval) = readChar();
                       yyFlag(yylval) = fSTR;
+
+                      return STR;
                     }
 
   /* Structure symbols - Return the symbol */ 
@@ -189,10 +196,6 @@ MLCOMMENTSTART  ("/*")
                         }
                     }      
 
- /* Semicolon - return it */
-{COMSEP}            {
-                        return yytext[0];
-                    }
  /* New line - increase the line counter and return it */
 {NL}                {
                         ++yylineno;
@@ -207,7 +210,7 @@ MLCOMMENTSTART  ("/*")
 %%
 
 /**
-* Convert an string to lowercase.
+* Convert a string to lowercase.
 * @param s - string to be converted.
 *
 */
@@ -293,7 +296,11 @@ static char *readStr(void) {
         case 'v': 
           c = '\v'; 
           break;        
+        case '\'':
+          c = '\'';
+          break;
         default: 
+          c = '\\';
           break; 
       } 
     }
@@ -323,15 +330,57 @@ static char *readChar(void) {
       prError(yylineno,"Unexpected symbol in char literal [%d]\n",c,NULL);
   }
 
-  if (c == '\'') return str;
+  if (c == '\'') return str; // empty char 
 
-  if (c == '\\') {
-    d = input();
-    if (d !='\\' ) {
-        addStr(&str,&len,c);
-        addStr(&str,&len,d);
-    }
-  }
+  if (c=='\\') { // Possible escaped character
+      c = input();
+      switch(c) { 
+        case 'a': 
+          c = '\a'; 
+          break; 
+        case 'b': 
+          c = '\b'; 
+          break; 
+        case 'e': 
+          c = '\e'; 
+          break; 
+        case 'f': 
+          c = '\f'; 
+          break; 
+        case 'n': 
+          c = '\n'; 
+          break; 
+        case 'r': 
+          c = '\r'; 
+          break; 
+        case 't': 
+          c = '\t'; 
+          break; 
+        case 'v': 
+          c = '\v'; 
+          break;        
+        case '\'':
+          c = '\'';
+          break;
+        case '\\':
+          c = '\\';
+          break;
+        case '\"':
+          c = '\"';
+          break;
+        default: 
+          prError(yylineno,"A char constant can only hold one char symbol [%d]\n",c,NULL);
+          break; 
+      } 
+  } 
+  
+  d = input();
+
+  if (d == '\'') {
+    addStr(&str,&len,c);
+  } else {
+    prError(yylineno,"A char constant can only hold one char symbol [%d]\n",c,NULL);
+  }    
 
   return str;
 }

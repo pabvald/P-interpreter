@@ -1,10 +1,6 @@
 
 
-all:
-	@make clean
-	@make syntactic
-	@make lexical
-	@make executable
+all: clean executable
 
 syntactic:
 	yacc --defines -v pcc.y -o pcc.c	
