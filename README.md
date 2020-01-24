@@ -14,7 +14,7 @@ astree.h   - header file for abstract syntax tree module
 inter01.l  - lex analyzer specification for flex
 inter01.y  - syntax parser specification for bison
 _mk        - simple shell script to build the parser
-read.me    - this file
+README.md    - this file
 stduse.c   - a small library of overrided standardly used functions
 stduse.h   - header file for this library
 symtab.c   - simple symbol table based on binary tree
