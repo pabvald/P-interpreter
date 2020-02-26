@@ -1,7 +1,7 @@
-Extension of the interprerter created by Dušan Kolář.
+## Extencion of the the interprerter created by Dušan Kolář.
 
 
-<hr>
+## Original README by  Dušan Kolář.
 This is a small DEMO intepreter exploiting flex and bison compilers.
 See end of read.me for versions used, even if other versions could be
 used as well.
