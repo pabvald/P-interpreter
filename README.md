@@ -1,4 +1,4 @@
-## Extencion of the the interprerter created by Dušan Kolář.
+## Extension of the the interprerter created by Dušan Kolář.
 
 
 ## Original README by  Dušan Kolář.
